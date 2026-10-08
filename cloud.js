@@ -55,6 +55,16 @@ if(mk){mk.innerHTML='<img src="AlainB-Pro-Icone-iPad.png" alt="AlainB Pro" style
 const sm=document.querySelector('.brand small');
 if(sm)sm.textContent='Gestion Cloud - V3';
 })();
+/* Menu latéral : icônes personnalisées */
+(function(){
+const M={dash:'Tableau-de-bord',clients:'Clients',chantiers:'Chantiers',devis:'Devis',interventions:'Interventions',ca:'Chiffre-d-affaires',factures:'Factures',documents:'Documents-comptables',backup:'Sauvegarde-%26-import',settings:'Parame%CC%80tres-entreprise'};
+document.querySelectorAll('.nav button[data-p]').forEach(b=>{
+const f=M[b.dataset.p];if(!f)return;
+const label=b.textContent.replace(/^\s*\S+\s+/,'').replace(/\s+/g,' ').trim();
+b.innerHTML='<img src="'+f+'.png" alt="" style="width:24px;height:24px;object-fit:contain;flex-shrink:0"><span>'+label+'</span>';
+b.style.display='flex';b.style.alignItems='center';b.style.gap='10px';
+});
+})();
 /* Apparence : boutons d'actions en icônes */
 (function(){
 const st=document.createElement('style');
