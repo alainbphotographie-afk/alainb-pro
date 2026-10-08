@@ -42,6 +42,9 @@ else if(l.includes('intervention'))d.interventions=x;else if(l.includes('relance
 return d;
 }
 nextInvoiceId=function(){let raw=String((S.d.settings&&S.d.settings.invoicePrefix)||'FAC'),prefix=raw.replace(/[-\s]*\d{0,4}[-\s]*$/,'')||'FAC',year=String(S.ref||'').slice(0,4)||String(new Date().getFullYear()),n=0;S.d.factures.forEach(x=>{let p=String(x.id||'').split('-');if(p.length===3&&p[0]===prefix&&p[1]===year){n=Math.max(n,Number(p[2])||0)}});return prefix+'-'+year+'-'+String(n+1).padStart(3,'0')};
+/* Confidentialité : la tuile CA encaissé est retirée du tableau de bord (visible dans la page Chiffre d'affaires) */
+const origDash=dash;
+dash=function(){return origDash().replace(/<div class="card"><div class="label">Chiffre d\u2019affaires encaiss\u00e9<\/div>[\s\S]*?Interventions pay\u00e9es<\/div><\/div>/,'').replace('<div class="metrics">','<div class="metrics" style="grid-template-columns:repeat(3,minmax(155px,1fr))">')};
 /* Apparence : boutons d'actions en icônes */
 (function(){
 const st=document.createElement('style');
