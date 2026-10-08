@@ -68,7 +68,7 @@ const V={
 dash:W('<g fill="#fff" stroke="none"><rect x="13" y="13" width="9" height="13" rx="2"/><rect x="26" y="13" width="9" height="7" rx="2"/><rect x="26" y="24" width="9" height="11" rx="2"/><rect x="13" y="30" width="9" height="5" rx="2"/></g>'),
 clients:W('<circle cx="24" cy="18" r="5.5"/><path d="M13.5 35c0-6 4.7-10 10.5-10s10.5 4 10.5 10"/>'),
 devis:W('<path d="M15 11h13l6 6v20H15z"/><path d="M28 11v6h6"/><path d="M19.5 24h10M19.5 29h10M19.5 33h5"/>'),
-interventions:W('<rect x="22.5" y="10" width="3" height="15" rx="1.5" fill="#fff" stroke="none"/><rect x="10" y="24" width="28" height="7" rx="3.5" fill="#fff" stroke="none"/><path d="M13 36.5h22"/>'),
+interventions:W('<g transform="rotate(-45 24 24)"><rect x="21.75" y="10" width="4.5" height="15" rx="2.25" fill="#fff" stroke="none"/><rect x="10" y="24" width="28" height="5" rx="2.5" fill="#fff" stroke="none"/><path d="M13 34h22"/></g>'),
 backup:W('<g transform="translate(9 9) scale(1.25)" stroke-width="2"><path d="M4 14.9A7 7 0 1 1 15.7 8h1.8a4.5 4.5 0 0 1 2.5 8.2"/><path d="M12 12v9"/><path d="m16 16-4-4-4 4"/></g>'),
 settings:W('<path d="M13 16h22M13 24h22M13 32h22"/><g fill="#fff" stroke="none"><circle cx="19" cy="16" r="3.6"/><circle cx="30" cy="24" r="3.6"/><circle cx="21" cy="32" r="3.6"/></g>')};
 document.querySelectorAll('.nav button[data-p]').forEach(b=>{
