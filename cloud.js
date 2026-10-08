@@ -42,6 +42,21 @@ else if(l.includes('intervention'))d.interventions=x;else if(l.includes('relance
 return d;
 }
 nextInvoiceId=function(){let raw=String((S.d.settings&&S.d.settings.invoicePrefix)||'FAC'),prefix=raw.replace(/[-\s]*\d{0,4}[-\s]*$/,'')||'FAC',year=String(S.ref||'').slice(0,4)||String(new Date().getFullYear()),n=0;S.d.factures.forEach(x=>{let p=String(x.id||'').split('-');if(p.length===3&&p[0]===prefix&&p[1]===year){n=Math.max(n,Number(p[2])||0)}});return prefix+'-'+year+'-'+String(n+1).padStart(3,'0')};
+/* Apparence : boutons d'actions en icônes */
+(function(){
+const st=document.createElement('style');
+st.textContent='.rowact{display:inline-flex;gap:6px;flex-wrap:nowrap;white-space:nowrap;align-items:center}.btn.ico{padding:0;width:32px;height:32px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px}.btn.ico svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;pointer-events:none}';
+document.head.appendChild(st);
+const I={
+fiche:'<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>',
+relance:'<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>',
+edit:'<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+del:'<svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>'};
+function b(cls,a,type,id,ico,tip){return '<button class="btn ico '+cls+'" data-a="'+a+'"'+(type?' data-t="'+type+'"':'')+' data-id="'+esc(id)+'" title="'+tip+'" aria-label="'+tip+'">'+I[ico]+'</button>'}
+buttons=function(type,id){
+return '<span class="rowact">'+b('alt','detail',type,id,'fiche','Fiche')+(type==='client'?b('','newrelance','',id,'relance','Relance'):'')+b('alt','edit',type,id,'edit','Modifier')+b('red','del',type,id,'del','Supprimer')+'</span>'};
+try{render()}catch(e){}
+})();
 async function pull(){
 if(!API_URL.includes('/exec'))return;
 try{setStatus('Chargement cloud...');
