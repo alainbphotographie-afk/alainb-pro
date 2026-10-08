@@ -45,6 +45,9 @@ nextInvoiceId=function(){let raw=String((S.d.settings&&S.d.settings.invoicePrefi
 /* Confidentialité : la tuile CA encaissé est retirée du tableau de bord (visible dans la page Chiffre d'affaires) */
 const origDash=dash;
 dash=function(){return origDash().replace(/<div class="card"><div class="label">Chiffre d\u2019affaires encaiss\u00e9<\/div>[\s\S]*?Interventions pay\u00e9es<\/div><\/div>/,'').replace('<div class="metrics">','<div class="metrics" style="grid-template-columns:repeat(3,minmax(155px,1fr))">')};
+/* Page Sauvegarde & import : mention de version */
+const origBackup=backup;
+backup=function(){return origBackup().replace(/<b>V1\.6\.40 :<\/b>[^<]*/,'<b>V3 :</b> gestion cloud synchronis\u00e9e avec Google Sheets.').replace(/donn\u00e9es locales de V1\.6\.40\./,'donn\u00e9es locales de la V3.')};
 /* Menu principal : icône de l'application et libellé */
 (function(){
 const mk=document.querySelector('.brand .mark');
