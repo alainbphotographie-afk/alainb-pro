@@ -45,6 +45,13 @@ nextInvoiceId=function(){let raw=String((S.d.settings&&S.d.settings.invoicePrefi
 /* Confidentialité : la tuile CA encaissé est retirée du tableau de bord (visible dans la page Chiffre d'affaires) */
 const origDash=dash;
 dash=function(){return origDash().replace(/<div class="card"><div class="label">Chiffre d\u2019affaires encaiss\u00e9<\/div>[\s\S]*?Interventions pay\u00e9es<\/div><\/div>/,'').replace('<div class="metrics">','<div class="metrics" style="grid-template-columns:repeat(3,minmax(155px,1fr))">')};
+/* Menu principal : icône de l'application et libellé */
+(function(){
+const mk=document.querySelector('.brand .mark');
+if(mk){mk.innerHTML='<img src="AlainB-Pro-Icone-iPad.png" alt="AlainB Pro" style="width:100%;height:100%;object-fit:cover;border-radius:9px;display:block">';mk.style.background='transparent';mk.style.overflow='hidden'}
+const sm=document.querySelector('.brand small');
+if(sm)sm.textContent='Gestion Cloud - V3';
+})();
 /* Apparence : boutons d'actions en icônes */
 (function(){
 const st=document.createElement('style');
