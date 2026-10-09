@@ -1,6 +1,6 @@
 (function(){
 const API_URL='https://script.google.com/macros/s/AKfycbx5qyFkHTgJpjlzbFuNHpYhXtBLg9u3klp3fMzRKMuVtU-3d64BGrRUaC6r4HNkibRv-Q/exec';
-let timer=null,canPush=false;
+let timer=null,canPush=false,badKey=0,pushTry=0;
 const SET_KEYS=['tradeName','companyName','manager','legalForm','address','postal','city','phone','email','website','siret','ape','vat','legalNotice','accountHolder','bank','iban','bic','bankLabel','invoicePrefix','logoName','paymentTerms','footer'];
 const SET_ALIAS={nomcommercial:'tradeName',raisonsociale:'companyName',responsable:'manager',dirigeant:'manager',formejuridique:'legalForm',adresse:'address',codepostal:'postal',cp:'postal',ville:'city',telephone:'phone',telephoneprofessionnel:'phone',emailprofessionnel:'email',mail:'email',siteweb:'website',site:'website',codeape:'ape',tva:'vat',mentionslegales:'legalNotice',titulaire:'accountHolder',titulairecompte:'accountHolder',banque:'bank',rib:'iban',libellevirement:'bankLabel',libellereglement:'bankLabel',prefixefactures:'invoicePrefix',prefixefacture:'invoicePrefix',logo:'logoName',conditionspaiement:'paymentTerms',piedpage:'footer',piedpagefacture:'footer'};
 function nk(s){return String(s==null?'':s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
@@ -16,21 +16,29 @@ return out;
 }
 function getKey(){let k=localStorage.getItem('abp_cle')||'';if(!k){k=prompt('Clé secrète AlainB Pro :')||'';if(k)localStorage.setItem('abp_cle',k)}return k}
 function setStatus(t){const s=document.getElementById('status');if(s)s.textContent=t}
+function wait(ms){return new Promise(r=>setTimeout(r,ms))}
 async function getJson(url){
-const r=await fetch(url);const t=await r.text();
-try{return JSON.parse(t)}catch(e){console.error('Réponse non JSON ('+r.status+') :',t.slice(0,300));return null}
+for(let i=0;i<2;i++){
+try{const r=await fetch(url);const t=await r.text();
+try{return JSON.parse(t)}catch(e){console.error('Réponse non JSON ('+r.status+') essai '+(i+1)+' :',t.slice(0,300))}
+}catch(e){console.error('Réseau essai '+(i+1)+' :',e)}
+if(i===0){setStatus('Cloud indisponible, nouvel essai...');await wait(3000)}
+}
+return null;
 }
 const origSave=save;
-save=function(){origSave();if(!canPush)return;clearTimeout(timer);timer=setTimeout(push,1500)};
+save=function(){origSave();if(!canPush)return;clearTimeout(timer);pushTry=0;timer=setTimeout(push,5000)};
+function retryPush(ms){if(pushTry<3){pushTry++;clearTimeout(timer);timer=setTimeout(push,ms)}}
 async function push(){
 try{setStatus('Synchronisation...');
 const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'save',key:getKey(),data:S.d})});
 const t=await r.text();let j=null;try{j=JSON.parse(t)}catch(e){console.error('Réponse POST non JSON :',t.slice(0,300))}
-if(j&&j.error==='cle invalide'){localStorage.removeItem('abp_cle');setStatus('Clé refusée : rechargez la page');return}
+if(j&&j.error==='cle invalide'){badKey++;if(badKey>=2){localStorage.removeItem('abp_cle');badKey=0;setStatus('Clé refusée : rechargez la page pour la ressaisir');return}setStatus('Clé refusée, nouvel essai...');retryPush(4000);return}
 if(!j||!j.ok)throw new Error(j&&j.error||'refus');
+badKey=0;pushTry=0;
 console.log('Sheets mis à jour :',j.report);
 setStatus('Sauvegardé dans Google Sheets à '+new Date().toLocaleTimeString('fr-FR'));
-}catch(e){console.error(e);setStatus('Erreur sauvegarde cloud (données locales conservées)')}
+}catch(e){console.error(e);setStatus('Erreur sauvegarde cloud, nouvel essai automatique (données locales conservées)');retryPush(10000)}
 }
 function fromTabs(j){
 const d={clients:[],chantiers:[],devis:[],interventions:[],relances:[],factures:[],settings:{}};
