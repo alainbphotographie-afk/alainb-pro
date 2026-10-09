@@ -20,7 +20,7 @@ const bs=[...td.children].filter(c=>c.tagName==='BUTTON'&&c.classList.contains('
 if(bs.length&&!td.querySelector('.rowact')){const sp=document.createElement('span');sp.className='rowact';td.textContent='';bs.forEach(b=>sp.appendChild(b));td.appendChild(sp)}
 });
 }
-const TITLE_PAGES=['clients','chantiers','devis','interventions','ca','factures','documents'];
+const TITLE_PAGES=['clients','chantiers','devis','interventions','ca','factures','documents','backup','settings'];
 function enhanceTitle(){
 if(!TITLE_PAGES.includes(S.p))return;
 const nb=document.querySelector('.nav button[data-p="'+S.p+'"] img');if(!nb)return;
