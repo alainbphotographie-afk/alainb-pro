@@ -81,6 +81,15 @@ const b=(k,l)=>'<button class="btn alt '+(f===k?'activeview':'')+'" data-cfilter
 return h.replace('<div class="viewtoggle">','<div class="viewtoggle">'+b('prospect','Prospect')+b('client','Client')+b('all','TOUS')+'</div><div class="viewtoggle">');
 };
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-cfilter]');if(b){localStorage.setItem('abp_clients_filter',b.dataset.cfilter);render()}});
+const origV=v;
+v=function(k){
+const r=origV(k);
+if(k==='id'&&!r&&!document.getElementById('fid')&&document.getElementById('fvisitDate')){
+let n=0;S.d.devis.forEach(x=>{const m=String(x.id||'').match(/(\d+)\s*$/);if(m)n=Math.max(n,Number(m[1]))});
+return 'DEV-'+(n+1);
+}
+return r;
+};
 function enhance(){try{enhanceTitle();enhanceButtons();enhanceCA();enhanceBackup()}catch(e){console.error(e)}}
 const obs=new MutationObserver(()=>{obs.disconnect();enhance();obs.observe(R,{childList:true,subtree:true})});
 enhance();obs.observe(R,{childList:true,subtree:true});
