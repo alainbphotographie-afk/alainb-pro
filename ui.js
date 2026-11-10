@@ -11,18 +11,18 @@ print:'<svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 
 edit:'<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'};
 const MAP=[['data-i','eye','Consulter'],['data-quoteview','eye','Consulter'],['data-pay','money','Règlement'],['data-print','print','Imprimer'],['data-quoteprint','print','Imprimer'],['data-quoteedit','edit','Modifier'],['data-editinvoice','edit','Modifier la facture']];
 
-/* Impression Devis conforme au modèle (sans HT, avec Frais de déplacement et Net à payer) */
-window.printQuote=function(id){
+/* Générateur PDF Devis 100% conforme au modèle AlainB Pro */
+window.generateQuotePDF=function(id){
 let d=S.d.devis.find(x=>cid(x.id)===cid(id));if(!d)return;
 let cl=client(d.client),works=quoteWorks(d),e=S.d.settings||{},
 company=e.tradeName||e.companyName||'AlainB Pro',
 addr=[e.address,[e.postal,e.city].filter(Boolean).join(' ')].filter(Boolean).join('<br>'),
 travel=num(d.travelFee||0);
 
-/* Si travelFee n'était pas stocké explicitement mais que amount > total des chantiers */
-let worksTotal=works.reduce((a,c)=>a+num(c.price),0);
-if(travel===0&&num(d.amount)>worksTotal&&worksTotal>0){
-travel=Math.round((num(d.amount)-worksTotal)*100)/100;
+/* Rétro-calcul garanti : si amount > prestations, la différence est le déplacement */
+let baseWorks=works.reduce((a,c)=>a+num(c.price),0);
+if(travel<=0&&num(d.amount)>baseWorks&&baseWorks>0){
+travel=Math.round((num(d.amount)-baseWorks)*100)/100;
 }
 
 let rows=works.map(c=>'<tr><td><b>'+esc(c.name)+'</b><br><span class="desc">'+esc(c.description||'Aucun descriptif renseigné.')+'</span></td><td style="text-align:right;font-weight:bold">'+eur(c.price)+'</td></tr>').join('');
@@ -33,8 +33,35 @@ w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Devis 
 w.document.close();
 };
 
+/* Remplacement global de printQuote */
+printQuote=window.generateQuotePDF;
+
+/* Générateur PDF Facture avec déplacement */
+const origPrintInvoice=printInvoice;
+printInvoice=function(id){
+let f=S.d.factures.find(x=>x.id===id);if(!f){origPrintInvoice(id);return}
+let dev=S.d.devis.find(d=>cid(d.client)===cid(f.client)&&(num(d.travelFee)>0||num(d.amount)>160));
+let travel=dev?num(dev.travelFee||(num(dev.amount)-160)):0;
+if(travel<=0){origPrintInvoice(id);return}
+
+let origTotal=invoiceTotal(f),totalWithTravel=origTotal+travel;
+let cl=client(f.client),e=S.d.settings||{},
+rows=(f.interventions||[]).map(i=>S.d.interventions.find(x=>cid(x.id)===cid(i))).filter(Boolean).map(x=>'<tr><td>'+fdate(x.date)+'</td><td><b>'+esc(chname(x.chantier))+'</b>'+(chantier(x.chantier)?.description?'<br><span class="desc">'+esc(chantier(x.chantier).description)+'</span>':'')+'</td><td style="text-align:right">'+eur(x.amount)+'</td></tr>').join('');
+rows+='<tr><td>—</td><td><b>Frais de déplacement</b><br><span class="desc">Prestation hors secteur (devis '+esc(dev.id)+')</span></td><td style="text-align:right">'+eur(travel)+'</td></tr>';
+
+let isTransfer=String(f.payment||'').toLowerCase().includes('virement'),
+bankBlock=isTransfer?'<section class="rib"><h2>Coordonnées bancaires pour règlement par virement</h2>'+(e.bank?'<p><b>'+esc(e.bank)+'</b></p>':'')+(e.accountHolder?'<p><b>Intitulé du compte :</b> '+esc(e.accountHolder)+'</p>':'')+(e.iban?'<p><b>IBAN :</b> '+esc(e.iban)+'</p>':'')+(e.bic?'<p><b>BIC / SWIFT :</b> '+esc(e.bic)+'</p>':'')+(e.bankLabel?'<p>'+esc(e.bankLabel)+'</p>':'')+'</section>':'',
+companyName=e.tradeName||e.companyName||'AlainB Pro',
+companyAddress=[e.address,[e.postal,e.city].filter(Boolean).join(' ')].filter(Boolean).join('<br>'),
+companyContact=[e.phone?'Tél. : '+e.phone:'',e.email?'E-mail : '+e.email:''].filter(Boolean).join(' · '),
+vatLine=e.vat||'TVA non applicable, art. 293 B du CGI',
+legalCenter=[[e.siret?'SIRET : '+esc(e.siret):'',e.ape?'APE : '+esc(e.ape):''].filter(Boolean).join(' &nbsp;·&nbsp; '),e.footer?esc(e.footer):''].filter(Boolean).join('<br>'),
+w=window.open('','_blank');if(!w){alert('Fenêtre bloquée');return}
+w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Facture '+esc(f.id)+'</title><style>body{font:14px Arial;margin:35px;color:#17324c;line-height:1.4}h1{border-bottom:3px solid #2cbfad;padding-bottom:12px;margin-bottom:18px}h2{font-size:15px;margin:0 0 8px}.company{margin:0 0 18px}.company b{font-size:17px}.meta{margin:14px 0}table{width:100%;border-collapse:collapse;margin-top:20px}th,td{border-bottom:1px solid #ddd;padding:10px;text-align:left}th{background:#102038;color:#fff}.total{text-align:right;font-size:18px;margin-top:20px;font-weight:bold}.vatamount{text-align:right;font-size:14px;color:#d95c5c;margin-top:4px}.netdue{text-align:right;font-size:19px;font-weight:bold;color:#126f68;margin-top:4px}.rib{border:2px solid #2cbfad;background:#f3fcfa;padding:14px 16px;margin-top:25px;page-break-inside:avoid}.rib p{margin:4px 0}.desc{color:#526474;font-size:12px;white-space:pre-wrap}.vatnotice{margin:10px 0;font-size:13px;color:#17324c}.footer{margin-top:20px;color:#526474;font-size:12px}.legalcenter{text-align:center;margin-top:30px;padding-top:12px;border-top:1px solid #ddd;color:#6b7e91;font-size:11px;letter-spacing:.3px}@media print{body{margin:20px}}</style></head><body><div class="company"><b>'+esc(companyName)+'</b>'+(companyAddress?'<br>'+companyAddress:'')+(companyContact?'<br>'+esc(companyContact):'')+'</div><h1>FACTURE '+esc(f.id)+'</h1><p><b>Client :</b> '+esc(cl?.name||f.client)+'<br>'+esc(cl?.street||'')+'<br>'+esc([cl?.postal,cl?.city].filter(Boolean).join(' '))+'</p><p class="meta"><b>Date :</b> '+fdate(f.date)+' &nbsp; <b>Statut :</b> '+esc(f.status)+'</p><table><tr><th>Date</th><th>Prestation</th><th style="text-align:right">Montant</th></tr>'+rows+'</table><div class="total">Total : '+eur(totalWithTravel)+'</div><div class="vatamount">TVA : '+eur(0)+'</div><div class="netdue">Montant NET à régler : '+eur(totalWithTravel)+'</div><p class="vatnotice">'+esc(vatLine)+'</p><p><b>Mode de règlement :</b> '+esc(f.payment||(f.status==='Réglée'||f.status==='Payée'?'Virement':'Non défini'))+(f.paidDate?' · Règlement reçu le '+fdate(f.paidDate):'')+'</p>'+bankBlock+(legalCenter?'<p class="legalcenter">'+legalCenter+'</p>':'')+'<script>window.onload=function(){window.print()}<\/script></body></html>');
+w.document.close();
+};
+
 function enhanceButtons(){
-/* Boutons de la page devis */
 if(S.p==='devis'){
 R.querySelectorAll('tr').forEach(tr=>{
 const act=tr.querySelector('.rowact');
@@ -48,7 +75,7 @@ p.setAttribute('data-quoteprint',id);
 p.setAttribute('title','Imprimer le devis');
 p.setAttribute('aria-label','Imprimer le devis');
 p.innerHTML=I.print;
-p.onclick=(e)=>{e.preventDefault();window.printQuote(id)};
+p.onclick=(e)=>{e.preventDefault();window.generateQuotePDF(id)};
 const del=act.querySelector('.red');
 if(del)act.insertBefore(p,del);else act.appendChild(p);
 const bDet=act.querySelector('[data-a="detail"]');
@@ -58,9 +85,8 @@ if(bDet){bDet.onclick=(e)=>{e.preventDefault();quoteView(id)};bDet.setAttribute(
 });
 }
 
-/* Redirection forcée de tous les boutons imprimer devis existants vers la nouvelle fonction */
 document.querySelectorAll('[data-quoteprint]').forEach(b=>{
-b.onclick=(e)=>{e.preventDefault();window.printQuote(b.dataset.quoteprint)};
+b.onclick=(e)=>{e.preventDefault();window.generateQuotePDF(b.dataset.quoteprint)};
 });
 
 if(S.p!=='factures'&&S.p!=='documents')return;
@@ -149,7 +175,7 @@ return 'DEV-'+(n+1);
 return r;
 };
 
-/* Injection du champ Frais de déplacement dans la modale Devis */
+/* Injection du champ Frais de déplacement avec saisie clavier fluide */
 function enhanceQuoteForm(){
 const fAmount=document.getElementById('f_amount');
 const fVisit=document.getElementById('f_visitDate');
@@ -161,7 +187,6 @@ if(fId&&fId.value){
 const curD=S.d.devis.find(x=>cid(x.id)===cid(fId.value));
 if(curD){
 curTravel=num(curD.travelFee||0);
-/* Rétro-calcul si ancien devis saisi avant la modif */
 if(curTravel===0&&curD.chantiers){
 let works=active(S.d.chantiers).filter(c=>curD.chantiers.some(id=>cid(id)===cid(c.id)));
 let base=works.reduce((a,c)=>a+num(c.price),0);
@@ -173,11 +198,12 @@ if(num(curD.amount)>base&&base>0)curTravel=Math.round((num(curD.amount)-base)*10
 const wrap=document.createElement('div');
 wrap.id='box_travelFee';
 wrap.style.cssText='grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0;background:#f7fafd;padding:12px;border-radius:10px;border:1px solid #dce8f2';
-wrap.innerHTML='<label style="font-size:11px;font-weight:bold;color:#4a637d;text-transform:uppercase">🚗 Frais de déplacement (€)<input id="f_travelFee" type="number" step="0.01" value="'+curTravel+'" style="padding:9px;border:1px solid #cdd9e4;border-radius:7px;margin-top:4px"></label><div style="font-size:12px;color:#5b7188;display:flex;align-items:center;line-height:1.4">Comptabilisés automatiquement dans le calcul du Net à payer.</div>';
+wrap.innerHTML='<label style="font-size:11px;font-weight:bold;color:#4a637d;text-transform:uppercase">🚗 Frais de déplacement (€)<input id="f_travelFee" type="number" step="1" min="0" value="'+(curTravel||0)+'" style="padding:9px;border:1px solid #cdd9e4;border-radius:7px;margin-top:4px"></label><div style="font-size:12px;color:#5b7188;display:flex;align-items:center;line-height:1.4">Tapez directement le montant au pavé numérique.</div>';
 fAmount.closest('label').parentNode.insertBefore(wrap,fAmount.closest('label'));
 
+const inp=document.getElementById('f_travelFee');
 const recalc=()=>{
-const travel=parseFloat(document.getElementById('f_travelFee')?.value)||0;
+const travel=parseFloat(inp.value)||0;
 let works=active(S.d.chantiers).filter(c=>Array.from(document.querySelectorAll('.quote-chk:checked')).some(e=>cid(e.value)===cid(c.id)));
 let base=works.reduce((a,c)=>a+num(c.price),0);
 let net=base+travel;
@@ -185,7 +211,7 @@ fAmount.value=net.toFixed(2).replace('.00','');
 const sum=document.getElementById('quotesummary');
 if(sum){sum.innerHTML='Tarif prestations : <b>'+eur(base)+'</b> + Déplacement : <b>'+eur(travel)+'</b> = Net à payer : <b style="color:#126f68">'+eur(net)+'</b>'}
 };
-document.getElementById('f_travelFee').oninput=recalc;
+inp.addEventListener('input',recalc);
 document.querySelectorAll('.quote-chk').forEach(c=>c.addEventListener('change',recalc));
 
 const origSaveBtn=document.getElementById('save');
@@ -204,7 +230,10 @@ if(d){d.travelFee=travelVal;save()}
 }
 }
 
+let isEnhancing=false;
 function enhance(){
+if(isEnhancing)return;
+isEnhancing=true;
 try{
 enhanceTitle();
 enhanceButtons();
@@ -218,6 +247,7 @@ const hid=document.createElement('input');hid.type='hidden';hid.id='f_id';hid.va
 (fv.closest('.modal')||document.body).appendChild(hid);
 }
 }catch(e){console.error(e)}
+finally{isEnhancing=false}
 }
 
 const obs=new MutationObserver(()=>{enhance()});
