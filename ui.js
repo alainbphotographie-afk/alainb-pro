@@ -84,13 +84,26 @@ document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest
 const origV=v;
 v=function(k){
 const r=origV(k);
-if(k==='id'&&!r&&!document.getElementById('fid')&&document.getElementById('fvisitDate')){
+if(k==='id'&&!r&&!document.getElementById('f_id')&&document.getElementById('f_visitDate')){
 let n=0;S.d.devis.forEach(x=>{const m=String(x.id||'').match(/(\d+)\s*$/);if(m)n=Math.max(n,Number(m[1]))});
 return 'DEV-'+(n+1);
 }
 return r;
 };
-function enhance(){try{enhanceTitle();enhanceButtons();enhanceCA();enhanceBackup()}catch(e){console.error(e)}}
+function enhance(){
+try{
+enhanceTitle();
+enhanceButtons();
+enhanceCA();
+enhanceBackup();
+const fv=document.getElementById('f_visitDate');
+if(fv&&!document.getElementById('f_id')){
+let n=0;S.d.devis.forEach(x=>{const m=String(x.id||'').match(/(\d+)\s*$/);if(m)n=Math.max(n,Number(m[1]))});
+const hid=document.createElement('input');hid.type='hidden';hid.id='f_id';hid.value='DEV-'+(n+1);
+(fv.closest('.modal')||document.body).appendChild(hid);
+}
+}catch(e){console.error(e)}
+}
 const obs=new MutationObserver(()=>{obs.disconnect();enhance();obs.observe(R,{childList:true,subtree:true})});
 enhance();obs.observe(R,{childList:true,subtree:true});
 try{render()}catch(e){}
