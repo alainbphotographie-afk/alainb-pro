@@ -1,5 +1,6 @@
 (function(){
 const R=document.getElementById('root');
+const M=document.getElementById('modal');
 const st=document.createElement('style');
 st.textContent='.cawrap{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:24px;align-items:start}.cawrap table{min-width:0;width:auto}.cachart h3{margin:0 0 8px;font-size:14px;color:#17324c}@media(max-width:900px){.cawrap{grid-template-columns:1fr}}';
 document.head.appendChild(st);
@@ -157,13 +158,24 @@ w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Factur
 w.document.close();
 };
 
-/* Injection du champ Frais de déplacement dans le formulaire Devis */
+/* Injection du champ Frais de déplacement dans la modale Devis */
 function enhanceQuoteForm(){
 const fAmount=document.getElementById('f_amount');
-if(!fAmount||document.getElementById('f_travelFee'))return;
+const fVisit=document.getElementById('f_visitDate');
+if(!fAmount||!fVisit||document.getElementById('f_travelFee'))return;
+
+/* Récupérer la valeur actuelle si modification d'un devis */
+let curTravel=0;
+const fId=document.getElementById('f_id');
+if(fId&&fId.value){
+const curD=S.d.devis.find(x=>cid(x.id)===cid(fId.value));
+if(curD)curTravel=num(curD.travelFee||0);
+}
+
 const wrap=document.createElement('div');
+wrap.id='box_travelFee';
 wrap.style.cssText='grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:8px 0;background:#f7fafd;padding:12px;border-radius:10px;border:1px solid #dce8f2';
-wrap.innerHTML='<label style="font-size:11px;font-weight:bold;color:#4a637d;text-transform:uppercase">🚗 Frais de déplacement (€)<input id="f_travelFee" type="number" step="0.01" value="0" style="padding:9px;border:1px solid #cdd9e4;border-radius:7px;margin-top:4px"></label><div style="font-size:12px;color:#5b7188;display:flex;align-items:center;line-height:1.4">Ajoutés automatiquement au montant des prestations du chantier pour calculer le Net à payer.</div>';
+wrap.innerHTML='<label style="font-size:11px;font-weight:bold;color:#4a637d;text-transform:uppercase">🚗 Frais de déplacement (€)<input id="f_travelFee" type="number" step="0.01" value="'+curTravel+'" style="padding:9px;border:1px solid #cdd9e4;border-radius:7px;margin-top:4px"></label><div style="font-size:12px;color:#5b7188;display:flex;align-items:center;line-height:1.4">Comptabilisés automatiquement dans le calcul du Net à payer.</div>';
 fAmount.closest('label').parentNode.insertBefore(wrap,fAmount.closest('label'));
 
 const recalc=()=>{
@@ -178,7 +190,7 @@ if(sum){sum.innerHTML='Tarif prestations : <b>'+eur(base)+'</b> + Déplacement :
 document.getElementById('f_travelFee').oninput=recalc;
 document.querySelectorAll('.quote-chk').forEach(c=>c.addEventListener('change',recalc));
 
-/* Sauvegarde du déplacement dans le devis */
+/* Sauvegarde du déplacement lors du clic sur Valider */
 const origSaveBtn=document.getElementById('save');
 if(origSaveBtn&&!origSaveBtn.dataset.boundTravel){
 origSaveBtn.dataset.boundTravel='1';
@@ -211,7 +223,10 @@ const hid=document.createElement('input');hid.type='hidden';hid.id='f_id';hid.va
 }catch(e){console.error(e)}
 }
 
-const obs=new MutationObserver(()=>{obs.disconnect();enhance();obs.observe(R,{childList:true,subtree:true})});
-enhance();obs.observe(R,{childList:true,subtree:true});
+/* Observer à la fois root ET modal pour capturer les formulaires popup */
+const obs=new MutationObserver(()=>{enhance()});
+enhance();
+obs.observe(R,{childList:true,subtree:true});
+if(M)obs.observe(M,{childList:true,subtree:true});
 try{render()}catch(e){}
 })();
