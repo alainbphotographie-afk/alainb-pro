@@ -10,6 +10,28 @@ print:'<svg viewBox="0 0 24 24"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 
 edit:'<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>'};
 const MAP=[['data-i','eye','Consulter'],['data-quoteview','eye','Consulter'],['data-pay','money','Règlement'],['data-print','print','Imprimer'],['data-quoteprint','print','Imprimer'],['data-quoteedit','edit','Modifier'],['data-editinvoice','edit','Modifier la facture']];
 function enhanceButtons(){
+if(S.p==='devis'){
+R.querySelectorAll('tr').forEach(tr=>{
+const act=tr.querySelector('.rowact');
+if(act&&!act.querySelector('[data-quoteprint]')){
+const bEdit=act.querySelector('[data-a="edit"]');
+const id=bEdit?bEdit.dataset.id:'';
+if(id){
+const p=document.createElement('button');
+p.className='btn ico warn';
+p.setAttribute('data-quoteprint',id);
+p.setAttribute('title','Imprimer le devis');
+p.setAttribute('aria-label','Imprimer le devis');
+p.innerHTML=I.print;
+p.onclick=()=>printQuote(id);
+const del=act.querySelector('.red');
+if(del)act.insertBefore(p,del);else act.appendChild(p);
+const bDet=act.querySelector('[data-a="detail"]');
+if(bDet){bDet.onclick=()=>quoteView(id);bDet.setAttribute('title','Consulter le devis')}
+}
+}
+});
+}
 if(S.p!=='factures'&&S.p!=='documents')return;
 MAP.forEach(([a,ico,tip])=>R.querySelectorAll('button['+a+']').forEach(b=>{
 if(b.classList.contains('ico'))return;
